@@ -117,11 +117,11 @@ def format_signed(num: int) -> str:
 def get_indicator(change: int) -> str:
     """Returns the visual indicator string based on price change."""
     if change <= -100:
-        return "🔥 DIP ALERT! / വില കുറഞ്ഞു!"
+        return "വില കുറഞ്ഞു (DIP)"
     elif change >= 100:
-        return "📈 Up / വില കൂടി"
+        return "വില കൂടി (UP)"
     else:
-        return "✅ Stable / സ്ഥിരത"
+        return "സ്ഥിരത (STABLE)"
 
 def generate_message(data: dict) -> str:
     """Generates the WhatsApp formatted message array."""
@@ -137,24 +137,24 @@ def generate_message(data: dict) -> str:
     
     indicator = get_indicator(d22['change'])
     
-    msg = f"🥇 Kerala 22K Gold - {greeting}\n"
-    msg += f"💰 Today: ₹{d22['today_1g']}/gm\n"
-    msg += f"⚖️ 1 Pavan (8g): ₹{d22['today_8g']}\n"
-    msg += f"📊 Yesterday: ₹{d22['yday_1g']}/gm\n"
-    msg += f"📈 Change: {format_signed(d22['change'])}\n\n"
+    msg = f"കേരള 22K സ്വർണ്ണം - {greeting}\n"
+    msg += f"• ഇന്ന്: ₹{d22['today_1g']}/gm\n"
+    msg += f"• 1 പവൻ (8g): ₹{d22['today_8g']}\n"
+    msg += f"• ഇന്നലെ: ₹{d22['yday_1g']}/gm\n"
+    msg += f"• മാറ്റം: {format_signed(d22['change'])}\n\n"
     
-    msg += f"🥇 Kerala 24K Gold - {greeting}\n"
-    msg += f"💰 Today: ₹{d24['today_1g']}/gm\n"
-    msg += f"⚖️ 1 Pavan (8g): ₹{d24['today_8g']}\n"
-    msg += f"📊 Yesterday: ₹{d24['yday_1g']}/gm\n"
-    msg += f"📈 Change: {format_signed(d24['change'])}\n\n"
+    msg += f"കേരള 24K സ്വർണ്ണം - {greeting}\n"
+    msg += f"• ഇന്ന്: ₹{d24['today_1g']}/gm\n"
+    msg += f"• 1 പവൻ (8g): ₹{d24['today_8g']}\n"
+    msg += f"• ഇന്നലെ: ₹{d24['yday_1g']}/gm\n"
+    msg += f"• മാറ്റം: {format_signed(d24['change'])}\n\n"
     
-    msg += "7-Day Range / 7 ദിവസത്തെ മാറ്റം:\n"
-    msg += f"   High (22K): ₹{d22['high_7d']} | High (24K): ₹{d24['high_7d']}\n"
-    msg += f"   Low (22K): ₹{d22['low_7d']} | Low (24K): ₹{d24['low_7d']}\n\n"
+    msg += "7 ദിവസത്തെ മാറ്റം:\n"
+    msg += f"• 22K High: ₹{d22['high_7d']}, Low: ₹{d22['low_7d']}\n"
+    msg += f"• 24K High: ₹{d24['high_7d']}, Low: ₹{d24['low_7d']}\n\n"
     
-    msg += f"{indicator}\n"
-    msg += f"⏰ {time_str} IST"
+    msg += f"അവസ്ഥ: {indicator}\n"
+    msg += f"സമയം: {time_str} IST"
     
     return msg
 
