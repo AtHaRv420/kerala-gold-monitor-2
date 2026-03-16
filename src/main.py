@@ -3,6 +3,7 @@ import sys
 import datetime
 import traceback
 import cloudscraper
+import pytz
 import requests
 from bs4 import BeautifulSoup
 from twilio.rest import Client
@@ -124,20 +125,25 @@ def get_indicator(change: int) -> str:
 
 def generate_message(data: dict) -> str:
     """Generates the WhatsApp formatted message array."""
-    time_str = datetime.datetime.now().strftime("%I:%M %p")
+    ist = pytz.timezone('Asia/Kolkata')
+    now = datetime.datetime.now(ist)
+    time_str = now.strftime("%I:%M %p")
+    
+    # Determine Morning or Evening based on 24-hour hour (if hour < 12 it's morning)
+    greeting = "Morning Update" if now.hour < 12 else "Evening Update"
     
     d22 = data['22k']
     d24 = data['24k']
     
     indicator = get_indicator(d22['change'])
     
-    msg = f"🥇 Kerala 22K Gold - Morning Update\n"
+    msg = f"🥇 Kerala 22K Gold - {greeting}\n"
     msg += f"💰 Today: ₹{d22['today_1g']}/gm\n"
     msg += f"⚖️ 1 Pavan (8g): ₹{d22['today_8g']}\n"
     msg += f"📊 Yesterday: ₹{d22['yday_1g']}/gm\n"
     msg += f"📈 Change: {format_signed(d22['change'])}\n\n"
     
-    msg += f"🥇 Kerala 24K Gold - Morning Update\n"
+    msg += f"🥇 Kerala 24K Gold - {greeting}\n"
     msg += f"💰 Today: ₹{d24['today_1g']}/gm\n"
     msg += f"⚖️ 1 Pavan (8g): ₹{d24['today_8g']}\n"
     msg += f"📊 Yesterday: ₹{d24['yday_1g']}/gm\n"
@@ -203,7 +209,8 @@ def main():
         else:
             user_number = os.environ.get('USER_WHATSAPP')
             if user_number:
-                print(f"Sending to {user_number}...")
+                masked_number = user_number[:-4] + "****" if len(user_number) > 4 else "****"
+                print(f"Sending to {masked_number}...")
                 send_whatsapp(message, user_number)
             else:
                 print("USER_WHATSAPP is missing. Cannot send update.")
