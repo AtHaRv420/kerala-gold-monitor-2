@@ -149,9 +149,9 @@ def generate_message(data: dict) -> str:
     msg += f"📊 Yesterday: ₹{d24['yday_1g']}/gm\n"
     msg += f"📈 Change: {format_signed(d24['change'])}\n\n"
     
-    msg += "7-Day Range:\n"
-    msg += f"   High: ₹{d22['high_7d']}\n"
-    msg += f"   Low: ₹{d22['low_7d']}\n\n"
+    msg += "7-Day Range / 7 ദിവസത്തെ മാറ്റം:\n"
+    msg += f"   High (22K): ₹{d22['high_7d']} | High (24K): ₹{d24['high_7d']}\n"
+    msg += f"   Low (22K): ₹{d22['low_7d']} | Low (24K): ₹{d24['low_7d']}\n\n"
     
     msg += f"{indicator}\n"
     msg += f"⏰ {time_str} IST"
