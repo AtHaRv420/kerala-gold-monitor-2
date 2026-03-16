@@ -207,13 +207,25 @@ def main():
             print(message)
             print("------------------------")
         else:
-            user_number = os.environ.get('USER_WHATSAPP')
-            if user_number:
-                masked_number = user_number[:-4] + "****" if len(user_number) > 4 else "****"
-                print(f"Sending to {masked_number}...")
-                send_whatsapp(message, user_number)
+            # We fetch both Admin and User numbers to send the successful update to everyone
+            user_whatsapp_env = os.environ.get('USER_WHATSAPP', '')
+            admin_whatsapp_env = os.environ.get('ADMIN_WHATSAPP', '')
+            
+            # Combine all comma-separated numbers from both variables into a unique list
+            all_raw_numbers = user_whatsapp_env.split(',') + admin_whatsapp_env.split(',')
+            # Strip whitespace and remove empty strings
+            valid_numbers = {num.strip() for num in all_raw_numbers if num.strip()}
+            
+            if valid_numbers:
+                for target_num in valid_numbers:
+                    masked_number = target_num[:-4] + "****" if len(target_num) > 4 else "****"
+                    print(f"Sending to {masked_number}...")
+                    try:
+                        send_whatsapp(message, target_num)
+                    except Exception as e:
+                        print(f"Failed to send to {masked_number}: {e}")
             else:
-                print("USER_WHATSAPP is missing. Cannot send update.")
+                print("No valid WHATSAPP numbers found in .env. Cannot send update.")
                 
             # Ping Healthchecks
             ping_url = os.environ.get('HEALTHCHECKS_PING_URL')
