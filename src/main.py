@@ -218,7 +218,13 @@ def main():
             
             if valid_numbers:
                 for target_num in valid_numbers:
-                    masked_number = target_num[:-4] + "****" if len(target_num) > 4 else "****"
+                    # target_num looks like "whatsapp:+918208356504"
+                    # We will mask everything after the "whatsapp:+" prefix
+                    if target_num.startswith("whatsapp:+"):
+                        masked_number = "whatsapp:+**********"
+                    else:
+                        masked_number = "**********"
+                        
                     print(f"Sending to {masked_number}...")
                     try:
                         send_whatsapp(message, target_num)
