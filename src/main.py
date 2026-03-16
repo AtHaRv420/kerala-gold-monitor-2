@@ -130,20 +130,20 @@ def generate_message(data: dict) -> str:
     time_str = now.strftime("%I:%M %p")
     
     # Determine Morning or Evening based on 24-hour hour (if hour < 12 it's morning)
-    greeting = "Morning Update" if now.hour < 12 else "Evening Update"
+    greeting = "രാവിലെത്തെ നിരക്ക്" if now.hour < 12 else "വൈകുന്നേരത്തെ നിരക്ക്"
     
     d22 = data['22k']
     d24 = data['24k']
     
     indicator = get_indicator(d22['change'])
     
-    msg = f"കേരള 22K സ്വർണ്ണം - {greeting}\n"
+    msg = f"കേരളം 22K സ്വർണ്ണം - {greeting}\n"
     msg += f"• ഇന്ന്: ₹{d22['today_1g']}/gm\n"
     msg += f"• 1 പവൻ (8g): ₹{d22['today_8g']}\n"
     msg += f"• ഇന്നലെ: ₹{d22['yday_1g']}/gm\n"
     msg += f"• മാറ്റം: {format_signed(d22['change'])}\n\n"
     
-    msg += f"കേരള 24K സ്വർണ്ണം - {greeting}\n"
+    msg += f"കേരളം 24K സ്വർണ്ണം - {greeting}\n"
     msg += f"• ഇന്ന്: ₹{d24['today_1g']}/gm\n"
     msg += f"• 1 പവൻ (8g): ₹{d24['today_8g']}\n"
     msg += f"• ഇന്നലെ: ₹{d24['yday_1g']}/gm\n"
@@ -153,7 +153,7 @@ def generate_message(data: dict) -> str:
     msg += f"• 22K High: ₹{d22['high_7d']}, Low: ₹{d22['low_7d']}\n"
     msg += f"• 24K High: ₹{d24['high_7d']}, Low: ₹{d24['low_7d']}\n\n"
     
-    msg += f"അവസ്ഥ: {indicator}\n"
+    msg += f"വിപണി നില: {indicator}\n"
     msg += f"സമയം: {time_str} IST"
     
     return msg
