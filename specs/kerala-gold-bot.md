@@ -14,6 +14,11 @@ We are building a zero-maintenance, zero-hosting-cost WhatsApp bot for a user wi
 2.  **The Fetch:** The function calls the Gold API to get today's 22K 1-gram rate, 8-gram rate and retrieves the last 7 days of data for both 22K and 24K gold.
 3.  **The Calculation:** The bot calculates the difference from yesterday, and identifies the 7-day High and 7-day Low.
 4.  **The Delivery:** The bot formats the message and dispatches it via the WhatsApp API (Meta Business or Twilio).
+5.  **Sandbox Session Management:** To handle the 72-hour Twilio Sandbox expiration, the bot must track the "Days Since Last Join." Every 3rd day, append a 'Maintenance' footer to the WhatsApp message.
+    
+    **Maintenance Footer:** "To keep receiving these alerts, please tap here and hit send: https://wa.me/14155238886?text=join%20bent-deal"
+    
+    **Logic:** Take the current day of the year (1-365). If that number is divisible by 3, show the footer. This ensures that every 3 days, both you and your mom see the link and can "re-up" the subscription in one tap.
 
 ## 4. Message Structure (The Output)
 The bot should send a localized, highly scannable message. Provide support for both English and a Malayalam translation.

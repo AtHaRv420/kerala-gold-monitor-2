@@ -156,6 +156,11 @@ def generate_message(data: dict) -> str:
     msg += f"വിപണി നില: {indicator}\n"
     msg += f"സമയം: {time_str} IST"
     
+    # Twilio Sandbox Maintenance Logic
+    day_of_year = now.timetuple().tm_yday
+    if day_of_year % 3 == 0:
+        msg += "\n\nTo keep receiving these alerts, please tap here and hit send: https://wa.me/14155238886?text=join%20bent-deal"
+        
     return msg
 
 def send_whatsapp(body: str, to_number: str):
