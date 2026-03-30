@@ -156,11 +156,6 @@ def generate_message(data: dict) -> str:
     msg += f"വിപണി നില: {indicator}\n"
     msg += f"സമയം: {time_str} IST"
     
-    # Twilio Sandbox Maintenance Logic
-    day_of_year = now.timetuple().tm_yday
-    if day_of_year % 3 == 0:
-        msg += "\n\nതുടർന്നും ഈ അപ്‌ഡേറ്റുകൾ ലഭിക്കാൻ താഴെയുള്ള ലിങ്കിൽ ക്ലിക്ക് ചെയ്ത് സെൻഡ് ചെയ്യുക: https://wa.me/14155238886?text=join%20bent-deal"
-        
     return msg
 
 def send_whatsapp(body: str, to_number: str):
@@ -180,6 +175,24 @@ def send_whatsapp(body: str, to_number: str):
         to=to_number
     )
     print(f"Message sent! SID: {message.sid}")
+
+def has_user_replied_today(target_num: str) -> bool:
+    """Checks Twilio logs if the user has sent an inbound message today."""
+    account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+    auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
+    
+    if not (account_sid and auth_token):
+        return False
+        
+    client = Client(account_sid, auth_token)
+    now_utc = datetime.datetime.now(pytz.utc).date()
+    
+    try:
+        messages = client.messages.list(from_=target_num, date_sent=now_utc)
+        return len(messages) > 0
+    except Exception as e:
+        print(f"Failed to fetch Twilio history: {e}")
+        return False
 
 def notify_admin_error(error_msg: str):
     """Sends an error alert to the administrator."""
@@ -231,8 +244,26 @@ def main():
                         masked_number = "**********"
                         
                     print(f"Sending to {masked_number}...")
+                    
+                    user_msg = message
+                    # Twilio Sandbox Maintenance Logic
+                    ist = pytz.timezone('Asia/Kolkata')
+                    now_ist = datetime.datetime.now(ist)
+                    day_of_year = now_ist.timetuple().tm_yday
+                    
+                    if day_of_year % 3 == 0:
+                        is_evening = now_ist.hour >= 12
+                        needs_footer = True
+                        
+                        if is_evening:
+                            if has_user_replied_today(target_num):
+                                needs_footer = False
+                                
+                        if needs_footer:
+                            user_msg += "\n\nതുടർന്നും ഈ അപ്‌ഡേറ്റുകൾ ലഭിക്കാൻ താഴെയുള്ള ലിങ്കിൽ ക്ലിക്ക് ചെയ്ത് സെൻഡ് ചെയ്യുക: https://wa.me/14155238886?text=join%20bent-deal"
+
                     try:
-                        send_whatsapp(message, target_num)
+                        send_whatsapp(user_msg, target_num)
                     except Exception as e:
                         print(f"Failed to send to {masked_number}: {e}")
             else:

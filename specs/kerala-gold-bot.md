@@ -18,7 +18,9 @@ We are building a zero-maintenance, zero-hosting-cost WhatsApp bot for a user wi
     
     **Maintenance Footer:** "തുടർന്നും ഈ അപ്‌ഡേറ്റുകൾ ലഭിക്കാൻ താഴെയുള്ള ലിങ്കിൽ ക്ലിക്ക് ചെയ്ത് സെൻഡ് ചെയ്യുക: https://wa.me/14155238886?text=join%20bent-deal"
     
-    **Logic:** Take the current day of the year (1-365). If that number is divisible by 3, show the footer. This ensures that every 3 days, both you and your mom see the link and can "re-up" the subscription in one tap.
+    **Logic:** 
+    *   Take the current day of the year (1-365). If that number is divisible by 3, append the footer.
+    *   **Contextual Hiding (Smart Evening Alerts):** During evening runs (12 PM+), use the Twilio API to check if the user has already sent an inbound message (replied) today. If they have, omit the footer for that specific user.
 
 ## 4. Message Structure (The Output)
 The bot should send a localized, highly scannable message. Provide support for both English and a Malayalam translation.
