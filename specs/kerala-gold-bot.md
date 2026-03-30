@@ -16,7 +16,7 @@ We are building a zero-maintenance, zero-hosting-cost WhatsApp bot for a user wi
 4.  **The Delivery:** The bot formats the message and dispatches it via the WhatsApp API (Meta Business or Twilio).
 5.  **Sandbox Session Management:** To handle the 72-hour Twilio Sandbox expiration, the bot must track the "Days Since Last Join." Every 3rd day, append a 'Maintenance' footer to the WhatsApp message.
     
-    **Maintenance Footer:** "To keep receiving these alerts, please tap here and hit send: https://wa.me/14155238886?text=join%20bent-deal"
+    **Maintenance Footer:** "തുടർന്നും ഈ അപ്‌ഡേറ്റുകൾ ലഭിക്കാൻ താഴെയുള്ള ലിങ്കിൽ ക്ലിക്ക് ചെയ്ത് സെൻഡ് ചെയ്യുക: https://wa.me/14155238886?text=join%20bent-deal"
     
     **Logic:** Take the current day of the year (1-365). If that number is divisible by 3, show the footer. This ensures that every 3 days, both you and your mom see the link and can "re-up" the subscription in one tap.
 

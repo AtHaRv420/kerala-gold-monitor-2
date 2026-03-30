@@ -159,7 +159,7 @@ def generate_message(data: dict) -> str:
     # Twilio Sandbox Maintenance Logic
     day_of_year = now.timetuple().tm_yday
     if day_of_year % 3 == 0:
-        msg += "\n\nTo keep receiving these alerts, please tap here and hit send: https://wa.me/14155238886?text=join%20bent-deal"
+        msg += "\n\nതുടർന്നും ഈ അപ്‌ഡേറ്റുകൾ ലഭിക്കാൻ താഴെയുള്ള ലിങ്കിൽ ക്ലിക്ക് ചെയ്ത് സെൻഡ് ചെയ്യുക: https://wa.me/14155238886?text=join%20bent-deal"
         
     return msg
 
