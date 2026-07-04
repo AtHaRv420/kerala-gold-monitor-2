@@ -14,101 +14,188 @@ def clean_price(price_str: str) -> int:
     cleaned = ''.join(c for c in price_str if c.isdigit())
     return int(cleaned) if cleaned else 0
 
-def fetch_gold_data(test_mode=False):
-    """Fetches and parses live and historical gold data from goodreturns."""
-    if test_mode:
-        print("Using local mock data for testing...")
-        return {
-            '22k': {
-                'today_1g': 14430,
-                'today_8g': 115440,
-                'yday_1g': 14635,
-                'change': -205,
-                'high_7d': 14635,
-                'low_7d': 14200
-            },
-            '24k': {
-                'today_1g': 15742,
-                'today_8g': 125936,
-                'yday_1g': 15966,
-                'change': -224,
-                'high_7d': 15966,
-                'low_7d': 15500
-            }
-        }
-        
+def parse_price_and_delta(cell_text: str) -> tuple:
+    """Parses cells like '₹14,673(-27)' or '₹ 1,07,600(200▼)' -> (price, delta).
+
+    Delta may be missing; returns (price, 0) in that case. Bankbazaar uses ▼/▲ to
+    indicate direction; goodreturns uses explicit -/+ signs inside the parens.
+    """
+    txt = cell_text.strip()
+    if '(' in txt:
+        price_part, delta_part = txt.split('(', 1)
+        delta_part = delta_part.rstrip(')').strip()
+    else:
+        price_part, delta_part = txt, ''
+
+    price = clean_price(price_part)
+
+    if not delta_part:
+        return price, 0
+
+    is_down = '-' in delta_part or '▼' in delta_part or 'down' in delta_part.lower()
+    delta_magnitude = clean_price(delta_part)
+    delta = -delta_magnitude if is_down else delta_magnitude
+    return price, delta
+
+def _mock_data() -> dict:
+    """Local mock data for TEST_MODE runs."""
+    return {
+        'source': 'mock',
+        '22k': {
+            'today_1g': 14430, 'today_8g': 115440, 'yday_1g': 14635,
+            'change': -205, 'high_7d': 14635, 'low_7d': 14200,
+        },
+        '24k': {
+            'today_1g': 15742, 'today_8g': 125936, 'yday_1g': 15966,
+            'change': -224, 'high_7d': 15966, 'low_7d': 15500,
+        },
+    }
+
+def fetch_from_goodreturns() -> dict:
+    """Primary source. Kerala-specific rates from goodreturns.in.
+
+    As of May 2026 the page ships two tables: [Gram|24K|22K|18K] with delta
+    inline in the price cell, and a 10-day history [Date|24K|22K].
+    """
     url = "https://www.goodreturns.in/gold-rates/kerala.html"
     scraper = cloudscraper.create_scraper()
     response = scraper.get(url, timeout=15)
     response.raise_for_status()
     soup = BeautifulSoup(response.content, 'html.parser')
-    
-    tables = soup.find_all('table')
-    if len(tables) < 4:
-        raise ValueError("Could not locate the expected number of pricing tables on goodreturns.in.")
-    
-    t22k = None
-    t24k = None
-    for t in tables[:3]:
-        text = t.get_text()
-        if "22 Carat" in text or "22k" in text.lower():
-            t22k = t
-        if "24 Carat" in text or "24k" in text.lower():
-            t24k = t
-            
-    if not t24k: t24k = tables[0]
-    if not t22k: t22k = tables[1]
-    
-    # 1g rates
-    today_22k_1g = clean_price(t22k.find_all('tr')[1].find_all('td')[1].text)
-    today_24k_1g = clean_price(t24k.find_all('tr')[1].find_all('td')[1].text)
-    
-    yday_22k_1g = clean_price(t22k.find_all('tr')[1].find_all('td')[2].text)
-    yday_24k_1g = clean_price(t24k.find_all('tr')[1].find_all('td')[2].text)
-    
-    # 8g rates (Pavan)
-    today_22k_8g = clean_price(t22k.find_all('tr')[2].find_all('td')[1].text)
-    today_24k_8g = clean_price(t24k.find_all('tr')[2].find_all('td')[1].text)
 
-    # Historical Table (Table 3)
-    history_table = tables[3]
-    rows = history_table.find_all('tr')[1:] # Skip header
-    
-    hist_22k = []
-    hist_24k = []
-    
-    for row in rows[:7]: # Get up to 7 days
+    tables = soup.find_all('table')
+    if len(tables) < 2:
+        raise ValueError("goodreturns.in: expected at least 2 tables, found "
+                         f"{len(tables)}.")
+
+    price_table, history_table = tables[0], tables[1]
+    price_rows = price_table.find_all('tr')
+    if len(price_rows) < 3:
+        raise ValueError("goodreturns.in: price table has too few rows.")
+
+    # Row layout: [header, 1g, 8g, 10g, 100g]. Cols: [gram, 24K, 22K, 18K].
+    row_1g = price_rows[1].find_all('td')
+    row_8g = price_rows[2].find_all('td')
+    today_24k_1g, delta_24k = parse_price_and_delta(row_1g[1].get_text())
+    today_22k_1g, delta_22k = parse_price_and_delta(row_1g[2].get_text())
+    today_24k_8g, _ = parse_price_and_delta(row_8g[1].get_text())
+    today_22k_8g, _ = parse_price_and_delta(row_8g[2].get_text())
+
+    yday_22k_1g = today_22k_1g - delta_22k
+    yday_24k_1g = today_24k_1g - delta_24k
+
+    hist_22k, hist_24k = [], []
+    for row in history_table.find_all('tr')[1:8]:  # 7 days
         cols = row.find_all('td')
-        if len(cols) >= 4:
-            try:
-                p24k = clean_price(cols[1].text)
-                p22k = clean_price(cols[3].text)
-                if p24k > 0: hist_24k.append(p24k)
-                if p22k > 0: hist_22k.append(p22k)
-            except Exception:
-                continue
-                
+        if len(cols) >= 3:
+            p24k, _ = parse_price_and_delta(cols[1].get_text())
+            p22k, _ = parse_price_and_delta(cols[2].get_text())
+            if p24k > 0: hist_24k.append(p24k)
+            if p22k > 0: hist_22k.append(p22k)
+
     if not hist_22k: hist_22k = [today_22k_1g]
     if not hist_24k: hist_24k = [today_24k_1g]
 
     return {
+        'source': 'goodreturns',
         '22k': {
-            'today_1g': today_22k_1g,
-            'today_8g': today_22k_8g,
-            'yday_1g': yday_22k_1g,
-            'change': today_22k_1g - yday_22k_1g,
-            'high_7d': max(hist_22k),
-            'low_7d': min(hist_22k)
+            'today_1g': today_22k_1g, 'today_8g': today_22k_8g,
+            'yday_1g': yday_22k_1g, 'change': delta_22k,
+            'high_7d': max(hist_22k), 'low_7d': min(hist_22k),
         },
         '24k': {
-            'today_1g': today_24k_1g,
-            'today_8g': today_24k_8g,
-            'yday_1g': yday_24k_1g,
-            'change': today_24k_1g - yday_24k_1g,
-            'high_7d': max(hist_24k),
-            'low_7d': min(hist_24k)
-        }
+            'today_1g': today_24k_1g, 'today_8g': today_24k_8g,
+            'yday_1g': yday_24k_1g, 'change': delta_24k,
+            'high_7d': max(hist_24k), 'low_7d': min(hist_24k),
+        },
     }
+
+def fetch_from_bankbazaar() -> dict:
+    """Fallback source. Also Kerala-specific.
+
+    Layout: two 4-column tables (one per purity, [Gram|Today|Yesterday|Change])
+    followed by a 10-day history in 8g pricing. We identify the 22K vs 24K
+    table by price (22K < 24K) rather than order to survive column reshuffles.
+    """
+    url = "https://www.bankbazaar.com/gold-rate-kerala.html"
+    scraper = cloudscraper.create_scraper()
+    response = scraper.get(url, timeout=15)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    tables = soup.find_all('table')
+    if len(tables) < 3:
+        raise ValueError("bankbazaar.com: expected at least 3 tables, found "
+                         f"{len(tables)}.")
+
+    def read_purity_table(table) -> dict:
+        rows = table.find_all('tr')
+        if len(rows) < 3:
+            raise ValueError("bankbazaar.com: purity table has too few rows.")
+        row_1g = rows[1].find_all('td')
+        row_8g = rows[2].find_all('td')
+        return {
+            'today_1g': clean_price(row_1g[1].get_text()),
+            'yday_1g': clean_price(row_1g[2].get_text()),
+            'today_8g': clean_price(row_8g[1].get_text()),
+        }
+
+    a = read_purity_table(tables[0])
+    b = read_purity_table(tables[1])
+    # Lower price = 22K, higher = 24K. Resilient to table reordering.
+    d22, d24 = (a, b) if a['today_1g'] < b['today_1g'] else (b, a)
+
+    # History table is in 8g pricing; divide by 8 for 1g equivalent.
+    # Cols: [Date, 22K(8g), 24K(8g)].
+    hist_22k, hist_24k = [], []
+    for row in tables[2].find_all('tr')[1:8]:
+        cols = row.find_all('td')
+        if len(cols) >= 3:
+            p22k_8g, _ = parse_price_and_delta(cols[1].get_text())
+            p24k_8g, _ = parse_price_and_delta(cols[2].get_text())
+            if p22k_8g > 0: hist_22k.append(p22k_8g // 8)
+            if p24k_8g > 0: hist_24k.append(p24k_8g // 8)
+
+    if not hist_22k: hist_22k = [d22['today_1g']]
+    if not hist_24k: hist_24k = [d24['today_1g']]
+
+    return {
+        'source': 'bankbazaar',
+        '22k': {
+            'today_1g': d22['today_1g'], 'today_8g': d22['today_8g'],
+            'yday_1g': d22['yday_1g'],
+            'change': d22['today_1g'] - d22['yday_1g'],
+            'high_7d': max(hist_22k), 'low_7d': min(hist_22k),
+        },
+        '24k': {
+            'today_1g': d24['today_1g'], 'today_8g': d24['today_8g'],
+            'yday_1g': d24['yday_1g'],
+            'change': d24['today_1g'] - d24['yday_1g'],
+            'high_7d': max(hist_24k), 'low_7d': min(hist_24k),
+        },
+    }
+
+def fetch_gold_data(test_mode=False) -> dict:
+    """Strategy wrapper: goodreturns -> bankbazaar. Raises only if both fail."""
+    if test_mode:
+        print("Using local mock data for testing...")
+        return _mock_data()
+
+    sources = [
+        ("goodreturns", fetch_from_goodreturns),
+        ("bankbazaar", fetch_from_bankbazaar),
+    ]
+    errors = []
+    for name, fn in sources:
+        try:
+            print(f"Trying source: {name}...")
+            data = fn()
+            print(f"Fetched from {name}.")
+            return data
+        except Exception as e:
+            print(f"Source '{name}' failed: {e}")
+            errors.append(f"{name}: {e}")
+    raise RuntimeError("All gold data sources failed. " + " | ".join(errors))
 
 def format_signed(num: int) -> str:
     """Formats a number with a plus or minus sign."""

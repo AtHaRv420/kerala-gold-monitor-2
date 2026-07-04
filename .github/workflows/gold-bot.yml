@@ -11,6 +11,10 @@ on:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+    env:
+      # Opt actions/checkout & setup-python into Node 24 ahead of the
+      # 2026-09-16 removal of Node 20 from GH Actions runners.
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
