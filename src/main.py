@@ -237,8 +237,8 @@ def generate_message(data: dict) -> str:
     msg += f"• മാറ്റം: {format_signed(d24['change'])}\n\n"
     
     msg += "7 ദിവസത്തെ മാറ്റം:\n"
-    msg += f"• 22K High: ₹{d22['high_7d']}, Low: ₹{d22['low_7d']}\n"
-    msg += f"• 24K High: ₹{d24['high_7d']}, Low: ₹{d24['low_7d']}\n\n"
+    msg += f"• 22K ഏറ്റവും കൂടിയ: ₹{d22['high_7d']}, ഏറ്റവും കുറഞ്ഞ: ₹{d22['low_7d']}\n"
+    msg += f"• 24K ഏറ്റവും കൂടിയ: ₹{d24['high_7d']}, ഏറ്റവും കുറഞ്ഞ: ₹{d24['low_7d']}\n\n"
     
     msg += f"വിപണി നില: {indicator}\n"
     msg += f"സമയം: {time_str} IST"
